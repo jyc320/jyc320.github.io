@@ -1,39 +1,519 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <title>Kazma 風格網站</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Tech Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* --- 1. 全局變數與重置 --- */
+        :root {
+            --bg-color: #0b0d17;
+            --text-color: #e0e6ed;
+            --primary-color: #00f3ff; /* 青色霓虹 */
+            --secondary-color: #7000ff; /* 紫色霓虹 */
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, .tech-font {
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        /* --- 2. 互動背景 Canvas --- */
+        #canvas-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* 置於最底層 */
+        }
+
+        /* --- 3. 導航欄 --- */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            text-shadow: 0 0 10px var(--primary-color);
+        }
+
+        .nav-links a {
+            color: var(--text-color);
+            text-decoration: none;
+            margin-left: 30px;
+            transition: 0.3s;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+            text-shadow: 0 0 8px var(--primary-color);
+        }
+
+        /* --- 4. 通用佈局容器 --- */
+        section {
+            padding: 100px 10%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+            display: inline-block;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px;
+        }
+
+        /* --- 5. Hero 區塊 (首頁) --- */
+        .hero-content h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            line-height: 1.1;
+        }
+
+        .hero-content h2 {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            height: 30px; /* 預留高度給打字效果 */
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            background-color: var(--primary-color);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 30px;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.4s;
+            position: relative;
+            overflow: hidden;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: var(--primary-color);
+            color: var(--bg-color);
+            box-shadow: 0 0 20px var(--primary-color);
+        }
+
+        /* --- 6. Timeline (經歷) --- */
+        .timeline {
+            position: relative;
+            border-left: 2px solid var(--glass-border);
+            margin-left: 20px;
+        }
+
+        .timeline-item {
+            margin-bottom: 40px;
+            margin-left: 30px;
+            position: relative;
+            opacity: 0; /* 初始隱藏，用於滾動動畫 */
+            transform: translateY(20px);
+            transition: 0.6s ease-out;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -39px;
+            top: 5px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--bg-color);
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 0 10px var(--primary-color);
+        }
+
+        .timeline-date {
+            color: var(--primary-color);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        /* --- 7. Projects (卡片區) --- */
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 30px;
+            border-radius: 10px;
+            transition: 0.4s;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+        }
+
+        .card h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .tech-stack span {
+            font-size: 0.8rem;
+            background: rgba(0, 243, 255, 0.1);
+            padding: 5px 10px;
+            margin-right: 5px;
+            border-radius: 4px;
+            color: var(--primary-color);
+        }
+
+        /* --- 8. 滾動動畫 Class --- */
+        .visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Mobile RWD */
+        @media (max-width: 768px) {
+            .hero-content h1 { font-size: 2.5rem; }
+            nav { padding: 20px; }
+            .nav-links { display: none; } /* 簡單隱藏，實際專案可做漢堡選單 */
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>你的名字 / LOGO</h1>
+
+    <canvas id="canvas-bg"></canvas>
+
     <nav>
-      <a href="#about">About</a>
-      <a href="#portfolio">Portfolio</a>
-      <a href="#contact">Contact</a>
+        <div class="logo tech-font">&lt;KAZMA-CLONE /&gt;</div>
+        <div class="nav-links tech-font">
+            <a href="#about">About</a>
+            <a href="#experience">Experience</a>
+            <a href="#projects">Projects</a>
+            <a href="#contact">Contact</a>
+        </div>
     </nav>
-  </header>
 
-  <section id="hero">
-    <h2>歡迎來到我的網站</h2>
-    <p>這裡放你的標語或簡介</p>
-    <button>了解更多</button>
-  </section>
+    <section id="home">
+        <div class="hero-content">
+            <p class="tech-font" style="color: var(--primary-color);">Hi, my name is</p>
+            <h1>Your Name.</h1>
+            <h2 class="tech-font"><span id="typewriter"></span><span class="cursor"></span></h2>
+            <p style="max-width: 600px; margin-top: 20px; opacity: 0.8;">
+                我是一名專注於創造沉浸式網頁體驗的軟體工程師。我喜歡將創意設計與強大的技術相結合。
+            </p>
+            <a href="#projects" class="btn tech-font">Check my work</a>
+        </div>
+    </section>
 
-  <section id="about">
-    <h2>About Me</h2>
-    <p>個人介紹文字...</p>
-  </section>
+    <section id="about">
+        <h2 class="section-title">01. About Me</h2>
+        <div style="display: flex; gap: 50px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 300px;">
+                <p>這裡可以放您的自我介紹。模仿 Kazma 的結構，但加上更多科技感的用詞。目前我正在專注於研究 <b>WebGL</b> 和 <b>互動式 UI</b> 設計。</p>
+                <br>
+                <p>最近使用的技術：</p>
+                <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; list-style: none; margin-top: 20px; font-family: 'Share Tech Mono';">
+                    <li>▹ JavaScript (ES6+)</li>
+                    <li>▹ React.js</li>
+                    <li>▹ Three.js</li>
+                    <li>▹ Node.js</li>
+                </ul>
+            </div>
+            <div style="width: 300px; height: 300px; border: 2px solid var(--primary-color); position: relative;">
+                <div style="width: 100%; height: 100%; background: rgba(0, 243, 255, 0.1); position: absolute; top: 15px; left: 15px; z-index: -1;"></div>
+                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--glass-border); font-size: 5rem;">IMG</div>
+            </div>
+        </div>
+    </section>
 
-  <section id="portfolio">
-    <h2>Portfolio</h2>
-    <div class="projects">
-      <div class="project-card">作品1</div>
-      <div class="project-card">作品2</div>
-    </div>
-  </section>
+    <section id="experience">
+        <h2 class="section-title">02. Experience</h2>
+        <div class="timeline">
+            <div class="timeline-item scroll-animate">
+                <div class="timeline-date tech-font">2023 - Present</div>
+                <h3>Senior Frontend Engineer</h3>
+                <p style="font-style: italic; opacity: 0.7;">Tech Company A</p>
+                <p>負責核心產品的前端架構設計，優化網站效能提升 40%。</p>
+            </div>
+            <div class="timeline-item scroll-animate">
+                <div class="timeline-date tech-font">2021 - 2023</div>
+                <h3>Web Developer</h3>
+                <p style="font-style: italic; opacity: 0.7;">Creative Studio B</p>
+                <p>與設計師緊密合作，開發高互動性的活動網站。</p>
+            </div>
+            <div class="timeline-item scroll-animate">
+                <div class="timeline-date tech-font">2019 - 2021</div>
+                <h3>Junior Developer</h3>
+                <p style="font-style: italic; opacity: 0.7;">Start-up C</p>
+                <p>協助開發後台管理系統，維護現有代碼庫。</p>
+            </div>
+        </div>
+    </section>
 
+    <section id="projects">
+        <h2 class="section-title">03. Projects</h2>
+        <div class="project-grid">
+            <div class="card scroll-animate">
+                <h3>Cyber Dashboard</h3>
+                <p>一個基於 React 的數據可視化儀表板，具有即時數據更新功能。</p>
+                <div class="tech-stack" style="margin-top: 15px;">
+                    <span>React</span>
+                    <span>D3.js</span>
+                    <span>API</span>
+                </div>
+            </div>
+            <div class="card scroll-animate">
+                <h3>E-Commerce Platform</h3>
+                <p>具有完整購物車功能和金流串接的電子商務網站。</p>
+                <div class="tech-stack" style="margin-top: 15px;">
+                    <span>Next.js</span>
+                    <span>Stripe</span>
+                    <span>Tailwind</span>
+                </div>
+            </div>
+            <div class="card scroll-animate">
+                <h3>Portfolio v1</h3>
+                <p>我的第一個個人網站，展示了早期的設計風格。</p>
+                <div class="tech-stack" style="margin-top: 15px;">
+                    <span>HTML</span>
+                    <span>CSS</span>
+                    <span>jQuery</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" style="text-align: center; align-items: center;">
+        <p class="tech-font" style="color: var(--primary-color);">04. What's Next?</p>
+        <h2 style="font-size: 3rem; margin: 20px 0;">Get In Touch</h2>
+        <p style="max-width: 500px; margin-bottom: 40px;">
+            我目前正在尋找新的機會。無論您是有問題想問，還是只想打個招呼，我的信箱隨時為您敞開！
+        </p>
+        <a href="mailto:your.email@example.com" class="btn tech-font">Say Hello</a>
+    </section>
+
+    <footer style="text-align: center; padding: 20px; font-size: 0.8rem; opacity: 0.6;">
+        <p class="tech-font">Designed & Built by Your Name</p>
+    </footer>
+
+    <script>
+        // --- 1. Canvas 粒子背景特效 ---
+        const canvas = document.getElementById('canvas-bg');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let particles = [];
+        
+        // 調整畫布大小
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // 粒子類別
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5; // 速度 X
+                this.vy = (Math.random() - 0.5) * 0.5; // 速度 Y
+                this.size = Math.random() * 2 + 1;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 邊界反彈
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            }
+
+            draw() {
+                ctx.fillStyle = 'rgba(0, 243, 255, 0.5)'; // 青色粒子
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // 初始化粒子
+        function initParticles() {
+            particles = [];
+            const particleCount = Math.min(window.innerWidth / 10, 100); // 根據螢幕寬度決定數量
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+        initParticles();
+
+        // 滑鼠互動
+        let mouse = { x: null, y: null };
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+        });
+
+        // 動畫循環
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            particles.forEach((p, index) => {
+                p.update();
+                p.draw();
+
+                // 粒子之間的連線
+                for (let j = index; j < particles.length; j++) {
+                    const p2 = particles[j];
+                    const dx = p.x - p2.x;
+                    const dy = p.y - p2.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 100) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(0, 243, 255, ${1 - distance / 100})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.stroke();
+                    }
+                }
+
+                // 滑鼠與粒子的連線
+                if (mouse.x != null) {
+                    const dx = p.x - mouse.x;
+                    const dy = p.y - mouse.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 150) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(112, 0, 255, ${1 - distance / 150})`; // 紫色連線
+                        ctx.lineWidth = 1;
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(mouse.x, mouse.y);
+                        ctx.stroke();
+                        
+                        // 輕微吸引效果
+                        p.vx += (mouse.x - p.x) * 0.0001;
+                        p.vy += (mouse.y - p.y) * 0.0001;
+                    }
+                }
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+
+        // --- 2. 打字機效果 ---
+        const textElement = document.getElementById('typewriter');
+        const phrases = ["I build things for the web.", "I create interactive experiences.", "I love clean code."];
+        let phraseIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        let typeSpeed = 100;
+
+        function type() {
+            const currentPhrase = phrases[phraseIndex];
+            
+            if (isDeleting) {
+                textElement.textContent = currentPhrase.substring(0, charIndex - 1);
+                charIndex--;
+                typeSpeed = 50;
+            } else {
+                textElement.textContent = currentPhrase.substring(0, charIndex + 1);
+                charIndex++;
+                typeSpeed = 100;
+            }
+
+            if (!isDeleting && charIndex === currentPhrase.length) {
+                isDeleting = true;
+                typeSpeed = 2000; // 停頓久一點
+            } else if (isDeleting && charIndex === 0) {
+                isDeleting = false;
+                phraseIndex = (phraseIndex + 1) % phrases.length;
+                typeSpeed = 500;
+            }
+
+            setTimeout(type, typeSpeed);
+        }
+        document.addEventListener('DOMContentLoaded', type);
+
+
+        // --- 3. 滾動觸發動畫 (Intersection Observer) ---
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.scroll-animate').forEach(el => {
+            observer.observe(el);
+        });
+
+    </script>
+</body>
+</html>
   <section id="contact">
     <h2>Contact</h2>
     <p>Email / 社群連結</p>
